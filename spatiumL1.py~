@@ -1,0 +1,18 @@
+# imports
+import chardet
+
+# Serial Implementation of the spatiumL1 algorithm
+
+# pseudocode
+
+# load Q
+#   scan Q for the top 200-300 words
+# load A (profile of contested author)
+
+# run formula to calculate delta0
+
+# load other profiles and produce deltam1, deltam2 etc
+
+# get the ratio, then use comparison
+
+# print results
