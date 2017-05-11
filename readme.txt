@@ -1,0 +1,1 @@
+An attempt at parallelizing the spatium-l1 authorship verification algorithm.
