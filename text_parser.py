@@ -50,3 +50,11 @@ def formatTextIntoDictionary(fileName):
     text = stripWords(text)
     text = getDictionaryOfUniqueWords(text)
     return text
+
+# function that, given the word/word count tuple list, returns total
+# unique words
+def getWordCount(wordList):
+    count = 0
+    for i in range(len(wordList)):
+        count = count + wordList[i][1]
+    return count

@@ -4,7 +4,7 @@ import utils
 import chardet
 import sys
 import codecs
-
+import time
 # Serial Implementation of the spatiumL1 algorithm
 
 # pseudocode
@@ -23,8 +23,10 @@ import codecs
 
 # main function of the program
 def main():
+    start = time.process_time()
     # Ensure the user has specified a file to use as q (our doc in question)
-    if(len(sys.argv) != 2):
+    # CLEAN THIS UP A BIT
+    if(len(sys.argv) != 3):
         print("Please specify the name of the document to test")
         sys.exit();
     # load our q text into a list of words
@@ -37,21 +39,203 @@ def main():
     #-----------------------------------------
     # using a dictionary data structure, we obtain a set of
     # unique words (the indecies) and the number of times they appear
-    wordDict = text_parser.getDictionaryOfUniqueWords(qDoc)
+    qWordDict = text_parser.getDictionaryOfUniqueWords(qDoc)
 
     # now we would like to have this dictionary as a list, so that we
     # can easily sort
-    wordCountList = text_parser.getUniqueTupleList(wordDict)
+    qWordCountList = text_parser.getUniqueTupleList(qWordDict)
 
     # sort this list by word count
-    wordCountList = utils.mergeSortNumeric(wordCountList)
+    qWordCountList = utils.mergeSortNumeric(qWordCountList)
 
-    # test print the first 300 words, but know that this should be
-    # controlled if there happen to be fewer than 300 words
-    with codecs.open("testoutput.txt" , "w" , encoding="utf-8") as f:
-        for i in range(len(wordCountList)-300 , len(wordCountList)):
-            f.write(wordCountList[i][0] + ":" + str(wordCountList[i][1])+"\n")
-        f.close()
+    # get the total word count of q
+    qWordCount = text_parser.getWordCount(qWordCountList)
 
+    #----------------------------------------------------
+    # open A, profile of the suspected author
+    #   A should contain between 1 and 5 known works
+    # ---------------------------------------------------
+    # load
+    aPath = sys.argv[2]
+    aDoc = text_parser.openFile(aPath)
+    aDoc = text_parser.splitText(aDoc)
+
+    #----------------------------------------------------
+    # split entirety of used words into tuple list pairing
+    # the word with its count
+    #----------------------------------------------------
+    # using a dictionary data structure, we obtain a set of
+    # unique words in tuple list form
+    aWordDict = text_parser.getDictionaryOfUniqueWords(aDoc)
+    aWordCountList = text_parser.getUniqueTupleList(aWordDict)
+
+    # get word count for A
+    aWordCount = text_parser.getWordCount(aWordCountList)
+
+    # run summation. Right now we'll use a linear search wich is messed
+    # up but it will have to do until we implement binary search
+    delta0 = 0
+    for i in range(0 , 300):
+        # need word count/total words for q
+        qWord = qWordCountList[len(qWordCountList)-1-i][0]
+        qWordFreq = qWordCountList[len(qWordCountList)-1-i][1] / qWordCount
+        # need the number of times qWord appears in A
+        aWordOccur = 0
+        for k in range(0 , len(aWordCountList)):
+            if(aWordCountList[k][0] == qWord):
+                aWordOccur= aWordOccur+1
+        aWordFreq = aWordOccur / aWordCount
+        delta0 = delta0 + (qWordFreq - aWordFreq)
+
+    print("our total delta is: " , delta0)
+
+    # now run this again with author profiles
+    # hard code city
+    
+    # first block of three
+    path = "./profiles/austen/austen_profile.txt"
+    mDoc = text_parser.openFile(path)
+    mDoc = text_parser.splitText(mDoc)
+    mWordDict = text_parser.getDictionaryOfUniqueWords(mDoc)
+    mWordCountList = text_parser.getUniqueTupleList(mWordDict)
+    deltaM1 = spatium(qWordCountList , qWordCount , mWordCountList)
+
+    xpath = "./profiles/joyce/joyce_profile.txt"
+    xDoc = text_parser.openFile(xpath)
+    xDoc = text_parser.splitText(xDoc)
+    xWordDict = text_parser.getDictionaryOfUniqueWords(xDoc)
+    xWordCountList = text_parser.getUniqueTupleList(xWordDict)
+    deltaM2 = spatium(qWordCountList , qWordCount , xWordCountList)
+
+    path = "./profiles/stoker/stoker_profile.txt"
+    mDoc = text_parser.openFile(path)
+    mDoc = text_parser.splitText(mDoc)
+    mWordDict = text_parser.getDictionaryOfUniqueWords(mDoc)
+    mWordCountList = text_parser.getUniqueTupleList(mWordDict)
+    deltaM3 = spatium(qWordCountList , qWordCount , mWordCountList)
+
+    # choose the lowest distance calculate (the least optimistic)
+    finalDelta1 = 0
+    if(deltaM1 < deltaM2):
+        if(deltaM1 < deltaM3):
+            finalDelta1 = deltaM1
+        else:
+            finalDelta1 = deltaM3
+    else:
+        if(deltaM2 < deltaM3):
+            finalDelta1 = deltaM2
+        else:
+            finalDelta1 = deltaM3
+
+    print("deltaM1: " , deltaM1 , "\ndeltaM2: " , deltaM2 , "\ndeltaM3: " , deltaM3)
+    print("our lowest is " , finalDelta1)
+
+    # second block of three
+    path = "./profiles/wilde/wilde_profile.txt"
+    mDoc = text_parser.openFile(path)
+    mDoc = text_parser.splitText(mDoc)
+    mWordDict = text_parser.getDictionaryOfUniqueWords(mDoc)
+    mWordCountList = text_parser.getUniqueTupleList(mWordDict)
+    deltaM1 = spatium(qWordCountList , qWordCount , mWordCountList)
+
+    xpath = "./profiles/verne/verne_profile.txt"
+    xDoc = text_parser.openFile(xpath)
+    xDoc = text_parser.splitText(xDoc)
+    xWordDict = text_parser.getDictionaryOfUniqueWords(xDoc)
+    xWordCountList = text_parser.getUniqueTupleList(xWordDict)
+    deltaM2 = spatium(qWordCountList , qWordCount , xWordCountList)
+
+    path = "./profiles/twain/twain_profile.txt"
+    mDoc = text_parser.openFile(path)
+    mDoc = text_parser.splitText(mDoc)
+    mWordDict = text_parser.getDictionaryOfUniqueWords(mDoc)
+    mWordCountList = text_parser.getUniqueTupleList(mWordDict)
+    deltaM3 = spatium(qWordCountList , qWordCount , mWordCountList)
+
+    # choose the lowest distance calculate (the least optimistic)
+    finalDelta2 = 0
+    if(deltaM1 < deltaM2):
+        if(deltaM1 < deltaM3):
+            finalDelta2 = deltaM1
+        else:
+            finalDelta2 = deltaM3
+    else:
+        if(deltaM2 < deltaM3):
+            finalDelta2 = deltaM2
+        else:
+            finalDelta2 = deltaM3
+
+    print("deltaM1: " , deltaM1 , "\ndeltaM2: " , deltaM2 , "\ndeltaM3: " , deltaM3)
+    print("our lowest is " , finalDelta2)
+
+
+    # third block of three
+    path = "./profiles/bronte_c/bronte_c_profile.txt"
+    mDoc = text_parser.openFile(path)
+    mDoc = text_parser.splitText(mDoc)
+    mWordDict = text_parser.getDictionaryOfUniqueWords(mDoc)
+    mWordCountList = text_parser.getUniqueTupleList(mWordDict)
+    deltaM1 = spatium(qWordCountList , qWordCount , mWordCountList)
+
+    xpath = "./profiles/dickens/dickens_profile.txt"
+    xDoc = text_parser.openFile(xpath)
+    xDoc = text_parser.splitText(xDoc)
+    xWordDict = text_parser.getDictionaryOfUniqueWords(xDoc)
+    xWordCountList = text_parser.getUniqueTupleList(xWordDict)
+    deltaM2 = spatium(qWordCountList , qWordCount , xWordCountList)
+
+    path = "./profiles/poe/poe_profile.txt"
+    mDoc = text_parser.openFile(path)
+    mDoc = text_parser.splitText(mDoc)
+    mWordDict = text_parser.getDictionaryOfUniqueWords(mDoc)
+    mWordCountList = text_parser.getUniqueTupleList(mWordDict)
+    deltaM3 = spatium(qWordCountList , qWordCount , mWordCountList)
+
+    # choose the lowest distance calculate (the least optimistic)
+    finalDelta3 = 0
+    if(deltaM1 < deltaM2):
+        if(deltaM1 < deltaM3):
+            finalDelta3 = deltaM1
+        else:
+            finalDelta3 = deltaM3
+    else:
+        if(deltaM2 < deltaM3):
+            finalDelta3 = deltaM2
+        else:
+            finalDelta3 = deltaM3
+
+    print("deltaM1: " , deltaM1 , "\ndeltaM2: " , deltaM2 , "\ndeltaM3: " , deltaM3)
+    print("our lowest is " , finalDelta3)
+
+    finalDeltaAvg = (finalDelta1 + finalDelta2 + finalDelta3) / 3
+
+    ratio = delta0 / finalDeltaAvg
+
+    if(ratio < .975):
+        print("same author")
+    elif(ratio > 1.025):
+        print("not the author")
+    else:
+        print("inconclusive")
+    end = time.process_time()
+
+    elapsed = end - start
+    print("This failure all took: " , elapsed)
+
+def spatium(qWordList , qWordCount , aWordList):
+    aWordCount = text_parser.getWordCount(aWordList)
+    delta = 0
+    for i in range(0 , 300):
+        # need word coutn/total for q
+        qWord = qWordList[len(qWordList)-1-i][0]
+        qWordFreq = qWordList[len(qWordList)-1-i][1] / qWordCount
+        # need the number of times qword appear in A
+        aWordOccur = 0
+        for k in range(0 , len(aWordList)):
+            if(aWordList[k][0] == qWord):
+                aWordOccur = aWordOccur+1
+        aWordFreq = aWordOccur / aWordCount
+        delta = delta + (qWordFreq - aWordFreq)
+    return delta
 
 main();
